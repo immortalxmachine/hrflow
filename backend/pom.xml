@@ -23,6 +23,8 @@
 		<jjwt.version>0.12.6</jjwt.version>
 		<commons-csv.version>1.12.0</commons-csv.version>
 		<zonky.embedded.version>2.0.7</zonky.embedded.version>
+		<!-- Extra JVM args for the test fork; overridable on the command line. -->
+		<hrflow.test.argline></hrflow.test.argline>
 	</properties>
 
 	<dependencies>
@@ -124,6 +126,20 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<!-- Cap the forked test JVM heap so the build stays memory-friendly
+			     (embedded Postgres runs as a separate process alongside it). -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<forkCount>1</forkCount>
+					<reuseForks>true</reuseForks>
+					<!-- hrflow.test.argline is empty by default (CI / normal runs); it
+					     lets a developer redirect the forked JVM's temp dir, e.g.
+					     -Dhrflow.test.argline=-Djava.io.tmpdir=/some/path -->
+					<argLine>-Xmx768m -XX:MaxMetaspaceSize=256m ${hrflow.test.argline}</argLine>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

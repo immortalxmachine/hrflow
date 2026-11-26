@@ -29,3 +29,4 @@ Thumbs.db
 
 # --- zonky embedded postgres extraction dir (tests) ---
 .embedded-pg/
+/.tmp/

@@ -6,6 +6,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -30,7 +31,13 @@ public abstract class AbstractPostgresTest {
 
     static {
         try {
-            POSTGRES = EmbeddedPostgres.builder().start();
+            // Extract the Postgres binaries into an HRFlow-specific directory so
+            // we never collide with another project that also uses zonky's
+            // default %TEMP%/embedded-pg directory on the same machine.
+            File workDir = new File(System.getProperty("java.io.tmpdir"), "hrflow-embedded-pg");
+            POSTGRES = EmbeddedPostgres.builder()
+                    .setOverrideWorkingDirectory(workDir)
+                    .start();
         } catch (IOException e) {
             throw new ExceptionInInitializerError(e);
         }

@@ -34,7 +34,18 @@ public class LeavePolicy {
     @Column(name = "max_consecutive_days", nullable = false)
     private int maxConsecutiveDays;
 
-    protected LeavePolicy() { }
+    public LeavePolicy() { }
+
+    /** All-args constructor, used by unit tests of the rule engine. */
+    public LeavePolicy(Country country, LeaveType leaveType, int annualEntitlement,
+                       int carryForwardMax, int minNoticeDays, int maxConsecutiveDays) {
+        this.country = country;
+        this.leaveType = leaveType;
+        this.annualEntitlement = annualEntitlement;
+        this.carryForwardMax = carryForwardMax;
+        this.minNoticeDays = minNoticeDays;
+        this.maxConsecutiveDays = maxConsecutiveDays;
+    }
 
     public Long getId() { return id; }
     public Country getCountry() { return country; }
