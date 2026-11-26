@@ -1,7 +1,9 @@
 # HRFlow — Interview Notes
 
-20 questions and answers tied to specific files and functions. All data is
-synthetic. Everything below reflects code in this repository.
+20 questions and answers tied to specific files and functions. Employees are
+seeded from the real public IBM HR Attrition dataset (Kaggle, DbCL-1.0; no real
+individuals); approval, escalation, audit and webhook records are app-generated
+at runtime. Everything below reflects code in this repository.
 
 ---
 

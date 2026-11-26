@@ -1,12 +1,13 @@
 -- =====================================================================
 -- V2: Seed reference/configuration data.
 --
--- SYNTHETIC DATA: the entitlement numbers below are simplified, illustrative
+-- NOTE: the leave entitlement numbers below are simplified, illustrative
 -- approximations of each country's leave rules for demo purposes. They are NOT
 -- legal advice and should not be treated as authoritative labour-law figures.
 --
--- Employees are NOT seeded here (there are ~200 of them); they are generated
--- by the DataSeeder on startup or imported via CSV. See README.
+-- Employees are NOT seeded here; the DataSeeder loads them on startup from the
+-- real public IBM HR Attrition dataset (1,470 rows; see README and
+-- sample-data/ibm-hr-attrition/SOURCE.md), or they are imported via CSV.
 -- =====================================================================
 
 -- ---------------------------------------------------------------------

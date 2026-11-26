@@ -1,5 +1,5 @@
 {
-  "_comment": "Numbers from real runs on 2026-11-26. All data is synthetic.",
+  "_comment": "Numbers from real runs on 2026-11-26. Employees are seeded from the real public IBM HR Attrition dataset (Kaggle pavansubhasht/ibm-hr-analytics-attrition-dataset, DbCL-1.0; no real individuals). Approval, escalation, audit and webhook records are app-generated at runtime (operational, not sourced data).",
   "tests": {
     "java_total": 27,
     "java_in_ci": 25,
@@ -20,7 +20,11 @@
     "leave_policies": 9,
     "public_holidays": 12,
     "countries": 3,
-    "synthetic_employees": 199
+    "employee_source": "IBM HR Analytics Employee Attrition dataset (Kaggle pavansubhasht/ibm-hr-analytics-attrition-dataset, DbCL-1.0)",
+    "seeded_employees": 1471,
+    "seeded_from_dataset": 1470,
+    "operational_system_admins": 1,
+    "roles_derived_from_dataset": { "managers": 102, "hr_admins": 52, "employees": 1316 }
   },
   "csv_import_dirty_file": {
     "total_rows": 8,

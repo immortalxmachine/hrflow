@@ -37,6 +37,27 @@ public class Employee {
 
     private String department;
 
+    // --- Real attributes from the IBM HR Attrition dataset (seed source). ---
+    // Reference/display only: the workflow, RBAC and leave engine never read
+    // these. Nullable so the CSV importer and test fixtures can omit them.
+    @Column(name = "age")
+    private Integer age;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "job_role")
+    private String jobRole;
+
+    @Column(name = "job_level")
+    private Integer jobLevel;
+
+    @Column(name = "monthly_income")
+    private Integer monthlyIncome;
+
+    @Column(name = "marital_status")
+    private String maritalStatus;
+
     // Direct manager; the level-1 approver for most flows. Lazy to avoid
     // loading the whole management chain on every fetch.
     @ManyToOne(fetch = FetchType.LAZY)
@@ -76,6 +97,18 @@ public class Employee {
     public void setRole(Role role) { this.role = role; }
     public String getDepartment() { return department; }
     public void setDepartment(String department) { this.department = department; }
+    public Integer getAge() { return age; }
+    public void setAge(Integer age) { this.age = age; }
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
+    public String getJobRole() { return jobRole; }
+    public void setJobRole(String jobRole) { this.jobRole = jobRole; }
+    public Integer getJobLevel() { return jobLevel; }
+    public void setJobLevel(Integer jobLevel) { this.jobLevel = jobLevel; }
+    public Integer getMonthlyIncome() { return monthlyIncome; }
+    public void setMonthlyIncome(Integer monthlyIncome) { this.monthlyIncome = monthlyIncome; }
+    public String getMaritalStatus() { return maritalStatus; }
+    public void setMaritalStatus(String maritalStatus) { this.maritalStatus = maritalStatus; }
     public Employee getManager() { return manager; }
     public void setManager(Employee manager) { this.manager = manager; }
     public Employee getHrbp() { return hrbp; }

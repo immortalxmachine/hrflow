@@ -36,8 +36,9 @@ export function Login({ onLogin }: { onLogin: (resp: LoginResponse) => void }) {
         {error && <div className="error">{error}</div>}
         <button className="primary" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
         <p className="hint">
-          Synthetic demo data. Seeded accounts use password <code>Password123!</code>.
-          Try <code>SYSADMIN</code>, or an <code>IN-EM-00xx</code> employee.
+          Employees seeded from the public IBM HR Attrition dataset (no real people).
+          Seeded accounts use password <code>Password123!</code>. Try <code>SYSADMIN</code>,
+          <code>AE-HR-0103</code> (HR), or <code>IN-MG-0023</code> (manager).
         </p>
       </form>
     </div>

@@ -5,7 +5,8 @@
   "highlights": [
     "Spring Boot 3 HRMS engine with data-driven multi-level approval workflows across 3 request types, JWT auth and service-layer RBAC over 16 REST endpoints.",
     "Append-only audit trail and a per-country leave-rule engine (India/UAE/Germany), covered by 27 Java tests on embedded Postgres plus 4 Python tests.",
-    "HMAC-SHA256 signed payroll webhooks with retries + delivery log, and an idempotent CSV employee importer with row-level validation."
+    "HMAC-SHA256 signed payroll webhooks with retries + delivery log, and an idempotent CSV employee importer with row-level validation.",
+    "Seeds its 1,470-employee population from the real public IBM HR Attrition dataset (Kaggle, DbCL-1.0) with no fabricated attributes; approval/audit events are app-generated at runtime."
   ],
   "metrics": [
     { "label": "REST endpoints", "value": "16" },

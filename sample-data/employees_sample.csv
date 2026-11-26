@@ -1,6 +1,6 @@
 employee_code,full_name,email,country,role,department,manager_code
-EXT-HR-01,Meera Raghavan,ext-hr-01@synthetic.hrflow.test,IN,HR_ADMIN,People,
-EXT-MG-01,Thomas Brandt,ext-mg-01@synthetic.hrflow.test,DE,MANAGER,Engineering,
-EXT-EM-01,Priya Suresh,ext-em-01@synthetic.hrflow.test,IN,EMPLOYEE,Engineering,EXT-MG-01
-EXT-EM-02,Omar Haddad,ext-em-02@synthetic.hrflow.test,AE,EMPLOYEE,Sales,EXT-MG-01
-EXT-EM-03,Lena Fischer,ext-em-03@synthetic.hrflow.test,DE,EMPLOYEE,Finance,EXT-MG-01
+IN-HR-0103,Employee 0103,emp-0103@sample.hrflow.invalid,IN,HR_ADMIN,Human Resources,
+IN-MG-0023,Employee 0023,emp-0023@sample.hrflow.invalid,IN,MANAGER,Sales,
+IN-EM-0001,Employee 0001,emp-0001@sample.hrflow.invalid,IN,EMPLOYEE,Sales,IN-MG-0023
+IN-EM-0002,Employee 0002,emp-0002@sample.hrflow.invalid,IN,EMPLOYEE,Research & Development,IN-MG-0023
+IN-EM-0004,Employee 0004,emp-0004@sample.hrflow.invalid,IN,EMPLOYEE,Research & Development,IN-MG-0023

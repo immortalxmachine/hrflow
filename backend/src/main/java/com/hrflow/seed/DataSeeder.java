@@ -6,40 +6,69 @@ import com.hrflow.repo.EmployeeRepository;
 import com.hrflow.repo.LeaveBalanceRepository;
 import com.hrflow.repo.LeavePolicyRepository;
 import com.hrflow.service.ImportService;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
 /**
- * Seeds ~200 SYNTHETIC employees across India, UAE and Germany when
- * {@code hrflow.seed-on-startup=true} and the employees table is empty.
+ * Seeds the employee population from the <b>real, public IBM HR Analytics
+ * Employee Attrition dataset</b> when {@code hrflow.seed-on-startup=true} and
+ * the employees table is empty.
  *
- * <p>All data is fabricated (names from fixed lists, @synthetic.hrflow.test
- * emails) and every account uses the documented default password. Generation is
- * deterministic (fixed RNG seed) so metrics are reproducible.
+ * <p>Source: Kaggle {@code pavansubhasht/ibm-hr-analytics-attrition-dataset}
+ * ({@code WA_Fn-UseC_-HR-Employee-Attrition.csv}, 1,470 rows), licensed
+ * DbCL-1.0. It is a public, fully anonymised teaching dataset created by IBM
+ * data scientists — it contains <b>no real individuals</b>.
+ *
+ * <p><b>Real, from the dataset (verbatim):</b> Department, JobRole, JobLevel,
+ * MonthlyIncome, Age, Gender, MaritalStatus, and the row's EmployeeNumber (which
+ * drives the stable {@code employee_code} and the neutral {@code "Employee NNNN"}
+ * display label — the dataset has no names).
+ *
+ * <p><b>Operational, assigned by this seeder (the dataset does not carry it):</b>
+ * the login email (on the reserved, clearly-non-real {@code .invalid} domain),
+ * the shared demo password, the HRFlow access {@link Role} (derived from the
+ * real JobRole/Department — see {@link #deriveRole}), the leave-rule
+ * {@link Country} (round-robined only to exercise the multi-jurisdiction engine),
+ * and the manager / HR-business-partner wiring (the dataset has no org chart).
+ * None of this invents personal attributes of a real person; it is the plumbing
+ * the workflow engine needs to run on top of the real rows.
+ *
+ * <p>Generation is deterministic (rows ordered by EmployeeNumber, fixed
+ * round-robin assignment) so metrics are reproducible.
  */
 @Component
 public class DataSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
-    private static final String[] FIRST = {
-            "Aarav", "Diya", "Kabir", "Mohammed", "Fatima", "Omar", "Layla", "Lukas",
-            "Anna", "Jonas", "Priya", "Rohan", "Sara", "Yusuf", "Mia", "Felix", "Noor", "Hana"};
-    private static final String[] LAST = {
-            "Sharma", "Patel", "Khan", "Al-Farsi", "Müller", "Schmidt", "Reddy", "Nair",
-            "Hassan", "Weber", "Fischer", "Iyer", "Rahman", "Becker", "Kaur", "Wagner"};
+    /** Classpath location of the real dataset (see {@code sample-data/ibm-hr-attrition/}). */
+    static final String DATASET_RESOURCE = "data/WA_Fn-UseC_-HR-Employee-Attrition.csv";
+
+    /** Leave-policy jurisdictions the engine is configured for (operational routing only). */
     private static final Country[] COUNTRIES = {Country.IN, Country.AE, Country.DE};
+
+    /** Clearly-non-real domain for login identities (RFC 2606 reserved TLD). */
+    private static final String EMAIL_DOMAIN = "sample.hrflow.invalid";
 
     private final EmployeeRepository employees;
     private final LeavePolicyRepository policies;
@@ -73,58 +102,173 @@ public class DataSeeder implements ApplicationRunner {
     /** Public so it can be invoked directly from a seed CLI / tests. */
     @Transactional
     public int seed() {
-        Random rnd = new Random(42); // deterministic
+        List<Row> rows = loadDataset();
         String hash = passwordEncoder.encode(ImportService.DEFAULT_PASSWORD);
         int year = LocalDate.now().getYear();
 
-        // One global system administrator.
+        // One global system administrator. This single account is operational
+        // (platform owner), not a dataset row.
         Employee sysadmin = employees.save(newEmployee(
-                "SYSADMIN", "System Admin", Country.IN, Role.SYSTEM_ADMIN, "IT", null, hash));
+                "SYSADMIN", "System Administrator", "sysadmin@" + EMAIL_DOMAIN,
+                Country.IN, Role.SYSTEM_ADMIN, "IT", null, hash));
         seedBalances(sysadmin, year);
 
-        int perCountryHr = 2, perCountryMgr = 6, perCountryEmp = 58;
-        int counter = 0;
+        // --- Pass 1: approvers (MANAGER / HR_ADMIN) first, so employees can
+        // reference them. Managers and HR are grouped by their operational
+        // country so manager/requester pairs stay within one jurisdiction. ---
+        Map<Country, List<Employee>> managersByCountry = new LinkedHashMap<>();
+        List<Employee> hrPool = new ArrayList<>();
+        for (Country c : COUNTRIES) {
+            managersByCountry.put(c, new ArrayList<>());
+        }
 
-        for (Country country : COUNTRIES) {
-            List<Employee> hrAdmins = new ArrayList<>();
-            List<Employee> managers = new ArrayList<>();
-
-            for (int i = 1; i <= perCountryHr; i++) {
-                Employee hr = employees.save(newEmployee(
-                        code(country, "HR", ++counter), name(rnd), country, Role.HR_ADMIN, "People", null, hash));
-                seedBalances(hr, year);
-                hrAdmins.add(hr);
-            }
-            for (int i = 1; i <= perCountryMgr; i++) {
-                Employee mgr = employees.save(newEmployee(
-                        code(country, "MG", ++counter), name(rnd), country, Role.MANAGER, dept(rnd),
-                        hrAdmins.get(rnd.nextInt(hrAdmins.size())), hash));
-                mgr.setHrbp(hrAdmins.get(rnd.nextInt(hrAdmins.size())));
-                seedBalances(mgr, year);
-                managers.add(mgr);
-            }
-            for (int i = 1; i <= perCountryEmp; i++) {
-                Employee mgr = managers.get(rnd.nextInt(managers.size()));
-                Employee emp = employees.save(newEmployee(
-                        code(country, "EM", ++counter), name(rnd), country, Role.EMPLOYEE, dept(rnd), mgr, hash));
-                emp.setHrbp(hrAdmins.get(rnd.nextInt(hrAdmins.size())));
-                seedBalances(emp, year);
+        for (Row r : rows) {
+            if (r.role == Role.MANAGER) {
+                Employee mgr = employees.save(toEmployee(r, null, hash));
+                managersByCountry.get(r.country).add(mgr);
+            } else if (r.role == Role.HR_ADMIN) {
+                hrPool.add(employees.save(toEmployee(r, null, hash)));
             }
         }
 
+        // --- Pass 2: regular employees, wired to a same-country manager (fall
+        // back to any manager) and an HR business partner. ---
+        List<Employee> allManagers = managersByCountry.values().stream()
+                .flatMap(List::stream).toList();
+        Map<Country, Integer> mgrCursor = new LinkedHashMap<>();
+        int hrCursor = 0, empCursor = 0;
+
+        for (Row r : rows) {
+            if (r.role != Role.EMPLOYEE) {
+                continue;
+            }
+            List<Employee> pool = managersByCountry.get(r.country);
+            Employee manager;
+            if (!pool.isEmpty()) {
+                int i = mgrCursor.merge(r.country, 1, Integer::sum) - 1;
+                manager = pool.get(i % pool.size());
+            } else {
+                manager = allManagers.get(empCursor % allManagers.size());
+            }
+            empCursor++;
+
+            Employee emp = toEmployee(r, manager, hash);
+            if (!hrPool.isEmpty()) {
+                emp.setHrbp(hrPool.get(hrCursor++ % hrPool.size()));
+            }
+            seedBalances(employees.save(emp), year);
+        }
+
+        // Give the approver accounts an HR business partner and balances too.
+        for (Employee mgr : allManagers) {
+            if (!hrPool.isEmpty()) {
+                mgr.setHrbp(hrPool.get(hrCursor++ % hrPool.size()));
+            }
+            seedBalances(mgr, year);
+        }
+        for (Employee hr : hrPool) {
+            seedBalances(hr, year);
+        }
+
         long total = employees.count();
-        log.info("Seeded {} synthetic employees across {} countries", total, COUNTRIES.length);
+        log.info("Seeded {} employees from the IBM HR Attrition dataset "
+                        + "({} managers, {} HR admins, 1 system admin) across {} leave jurisdictions",
+                total, allManagers.size(), hrPool.size(), COUNTRIES.length);
         return (int) total;
+    }
+
+    // --- dataset loading ---
+
+    private List<Row> loadDataset() {
+        String csv;
+        try {
+            byte[] bytes = new ClassPathResource(DATASET_RESOURCE).getInputStream().readAllBytes();
+            csv = new String(bytes, StandardCharsets.UTF_8);
+            if (!csv.isEmpty() && csv.charAt(0) == '﻿') {
+                csv = csv.substring(1); // strip UTF-8 BOM so the first header parses cleanly
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot read seed dataset on classpath: " + DATASET_RESOURCE, e);
+        }
+
+        CSVFormat format = CSVFormat.DEFAULT.builder()
+                .setHeader().setSkipHeaderRecord(true).setTrim(true)
+                .setIgnoreEmptyLines(true).build();
+
+        List<Row> rows = new ArrayList<>();
+        try (CSVParser p = format.parse(new StringReader(csv))) {
+            for (CSVRecord rec : p) {
+                Row r = new Row();
+                r.employeeNumber = Integer.parseInt(rec.get("EmployeeNumber"));
+                r.department = rec.get("Department");
+                r.jobRole = rec.get("JobRole");
+                r.jobLevel = parseIntOrNull(rec.get("JobLevel"));
+                r.monthlyIncome = parseIntOrNull(rec.get("MonthlyIncome"));
+                r.age = parseIntOrNull(rec.get("Age"));
+                r.gender = rec.get("Gender");
+                r.maritalStatus = rec.get("MaritalStatus");
+                rows.add(r);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot parse seed dataset: " + DATASET_RESOURCE, e);
+        }
+
+        // Deterministic order + operational country assignment (round-robin so
+        // all three jurisdictions are populated). Country is NOT in the dataset.
+        rows.sort(Comparator.comparingInt(a -> a.employeeNumber));
+        for (int i = 0; i < rows.size(); i++) {
+            Row r = rows.get(i);
+            r.country = COUNTRIES[i % COUNTRIES.length];
+            r.role = deriveRole(r.department, r.jobRole);
+        }
+        return rows;
+    }
+
+    /**
+     * Map the real IBM JobRole / Department onto an HRFlow access role:
+     * the dataset's "Manager" job role becomes {@link Role#MANAGER}; Human
+     * Resources staff in the HR department become {@link Role#HR_ADMIN}
+     * (the engine's HR approvers); everyone else is a plain {@link Role#EMPLOYEE}.
+     */
+    private Role deriveRole(String department, String jobRole) {
+        if ("Manager".equals(jobRole)) {
+            return Role.MANAGER;
+        }
+        if ("Human Resources".equals(department) && "Human Resources".equals(jobRole)) {
+            return Role.HR_ADMIN;
+        }
+        return Role.EMPLOYEE;
     }
 
     // --- helpers ---
 
-    private Employee newEmployee(String code, String fullName, Country country, Role role,
-                                 String department, Employee manager, String hash) {
+    private Employee toEmployee(Row r, Employee manager, String hash) {
+        String kind = switch (r.role) {
+            case MANAGER -> "MG";
+            case HR_ADMIN -> "HR";
+            case SYSTEM_ADMIN -> "SY";
+            case EMPLOYEE -> "EM";
+        };
+        String code = String.format("%s-%s-%04d", r.country.name(), kind, r.employeeNumber);
+        String label = String.format("Employee %04d", r.employeeNumber);
+        String email = String.format("emp-%04d@%s", r.employeeNumber, EMAIL_DOMAIN);
+
+        Employee e = newEmployee(code, label, email, r.country, r.role, r.department, manager, hash);
+        e.setAge(r.age);
+        e.setGender(r.gender);
+        e.setJobRole(r.jobRole);
+        e.setJobLevel(r.jobLevel);
+        e.setMonthlyIncome(r.monthlyIncome);
+        e.setMaritalStatus(r.maritalStatus);
+        return e;
+    }
+
+    private Employee newEmployee(String code, String fullName, String email, Country country,
+                                 Role role, String department, Employee manager, String hash) {
         Employee e = new Employee();
         e.setEmployeeCode(code);
         e.setFullName(fullName);
-        e.setEmail(code.toLowerCase() + "@synthetic.hrflow.test");
+        e.setEmail(email);
         e.setCountry(country);
         e.setRole(role);
         e.setDepartment(department);
@@ -143,16 +287,28 @@ public class DataSeeder implements ApplicationRunner {
         }
     }
 
-    private String code(Country c, String kind, int n) {
-        return String.format("%s-%s-%04d", c.name(), kind, n);
+    private static Integer parseIntOrNull(String s) {
+        if (s == null || s.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(s.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
-    private String name(Random rnd) {
-        return FIRST[rnd.nextInt(FIRST.length)] + " " + LAST[rnd.nextInt(LAST.length)];
-    }
-
-    private String dept(Random rnd) {
-        String[] depts = {"Engineering", "Sales", "Finance", "Operations", "Marketing"};
-        return depts[rnd.nextInt(depts.length)];
+    /** A parsed dataset row plus the operational fields this seeder assigns. */
+    private static final class Row {
+        int employeeNumber;
+        String department;
+        String jobRole;
+        Integer jobLevel;
+        Integer monthlyIncome;
+        Integer age;
+        String gender;
+        String maritalStatus;
+        Country country;   // operational (assigned)
+        Role role;         // derived from department/jobRole
     }
 }

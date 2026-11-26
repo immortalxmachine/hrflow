@@ -5,10 +5,41 @@ multi-level approval workflows, role-based access control, an append-only audit
 trail, country-specific leave rules, bulk employee import, and a signed payroll
 webhook integration. Built to mirror the core of a Darwinbox-style HRMS.
 
-> ⚠️ **All employee, request and payroll data in this project is SYNTHETIC.**
-> Names come from fixed lists, emails use the `@synthetic.hrflow.test` domain,
-> and the country leave numbers are simplified illustrative approximations — not
-> legal advice. Seeded accounts use the password `Password123!`.
+> ℹ️ **Employees are seeded from a real public dataset; no real individual's
+> data is used.** The startup seed loads the
+> [IBM HR Analytics Employee Attrition dataset](https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset)
+> (`WA_Fn-UseC_-HR-Employee-Attrition.csv`, 1,470 rows; Kaggle slug
+> `pavansubhasht/ibm-hr-analytics-attrition-dataset`, licensed **DbCL-1.0**). It
+> is a fully anonymised teaching dataset published by IBM data scientists and
+> contains **no real people** — it ships with no names, so each account shows a
+> neutral `Employee NNNN` label derived from its real `EmployeeNumber`.
+>
+> - **Real (verbatim from the dataset):** Department, JobRole, JobLevel,
+>   MonthlyIncome, Age, Gender, MaritalStatus, and the EmployeeNumber behind each
+>   `employee_code` and display label.
+> - **Operational (assigned by the app, not personal data):** login emails on the
+>   reserved, clearly-non-real `.invalid` domain; the shared demo password
+>   `Password123!`; the HRFlow access role (derived from the real JobRole/Department);
+>   the leave-rule country (round-robined across IN/UAE/DE only to exercise the
+>   multi-jurisdiction engine — the dataset has no geography); and the
+>   manager / HR-business-partner wiring (the dataset has no org chart).
+> - **App-generated at runtime (operational, not sourced data):** every approval,
+>   escalation, audit-log and webhook-delivery record is produced by the engine as
+>   you drive it.
+>
+> The country leave numbers in `V2__seed_reference_data.sql` remain simplified
+> illustrative approximations — not legal advice.
+
+## Demo
+
+![HRFlow — React admin console sign-in](docs/img/demo.png)
+
+*The React + TypeScript admin console (Vite dev server). Sign in with a seeded
+account (all use the demo password `Password123!`) to reach the requests,
+approvals, workflow-config and audit-log views; the SPA proxies `/api` to the
+Spring Boot backend. Example seeded logins: `SYSADMIN` (system admin),
+`AE-HR-0103` (HR admin), `IN-MG-0023` (manager) — codes are
+`<country>-<kind>-<real EmployeeNumber>`.*
 
 ## Stack
 
@@ -33,10 +64,11 @@ hrflow/
 │       ├── rules/     LeaveRuleEngine (pure country-rule logic)
 │       ├── service/   Workflow, Request, Approval, Escalation, Audit, Import, Webhook
 │       ├── web/       REST controllers + error handling
-│       └── seed/      synthetic data seeder
+│       └── seed/      seeds employees from the real IBM HR Attrition dataset
 ├── payroll-mock/   FastAPI webhook receiver (HMAC verify + failure injection)
 ├── ui/             React + TypeScript admin console (Vite)
-├── sample-data/    synthetic CSVs (clean + deliberately dirty)
+├── sample-data/    import-demo CSVs (real-derived sample + a validation fixture)
+│                   and IBM-dataset provenance (ibm-hr-attrition/SOURCE.md)
 └── docker-compose.yml  full stack (documented reference artifact)
 ```
 
@@ -108,7 +140,7 @@ cd ui && npm install && npm run build
 
 ```bash
 # 1. Backend (needs a Postgres; see docker-compose or point HRFLOW_DB_* at your own)
-cd backend && ./mvnw spring-boot:run     # :8080, set HRFLOW_SEED=true to seed ~200 employees
+cd backend && ./mvnw spring-boot:run     # :8080, set HRFLOW_SEED=true to seed 1,470 IBM-dataset employees
 
 # 2. Payroll mock
 cd payroll-mock && uvicorn app:app --port 8001
@@ -154,7 +186,9 @@ See [`metrics.json`](metrics.json). Highlights:
 - **16 REST endpoints** across 3 roles, with service-layer RBAC.
 - **3 workflow types** (LEAVE, ONBOARDING, EXPENSE), stored as editable data.
 - **9 leave policies + 12 public holidays** seeded across India, UAE, Germany.
-- **~199 synthetic employees** seeded across 3 countries with a manager hierarchy.
+- **1,470 real employees** seeded from the IBM HR Attrition dataset (plus 1
+  operational system-admin) — 102 managers and 52 HR admins derived from the
+  dataset's own JobRole/Department, wired into a manager hierarchy.
 - **Dirty-CSV import**: 8 rows → 3 imported, 5 rejected with reasons (no silent drops); idempotent on re-import.
 - **Webhook delivery**: succeeds on the 3rd attempt after 2 injected failures; marked FAILED after exhausting 3 attempts — proven against the live mock.
 
