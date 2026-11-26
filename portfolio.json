@@ -1,0 +1,18 @@
+{
+  "title": "HRFlow",
+  "tagline": "HRMS workflow engine with approvals, RBAC & audit trail",
+  "category": "Software",
+  "highlights": [
+    "Spring Boot 3 HRMS engine with data-driven multi-level approval workflows across 3 request types, JWT auth and service-layer RBAC over 16 REST endpoints.",
+    "Append-only audit trail and a per-country leave-rule engine (India/UAE/Germany), covered by 27 Java tests on embedded Postgres plus 4 Python tests.",
+    "HMAC-SHA256 signed payroll webhooks with retries + delivery log, and an idempotent CSV employee importer with row-level validation."
+  ],
+  "metrics": [
+    { "label": "REST endpoints", "value": "16" },
+    { "label": "Automated tests", "value": "31" },
+    { "label": "Request types", "value": "3" }
+  ],
+  "demo": null,
+  "featured": true,
+  "order": 5
+}
