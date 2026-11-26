@@ -60,7 +60,7 @@ public class Employee {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 
-    protected Employee() { } // required by JPA
+    public Employee() { } // required by JPA; also used by the importer/seeder
 
     // --- getters / setters ---
     public Long getId() { return id; }
