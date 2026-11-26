@@ -1,0 +1,45 @@
+{
+  "_comment": "Numbers from real runs on 2026-11-26. All data is synthetic.",
+  "tests": {
+    "java_total": 27,
+    "java_in_ci": 25,
+    "java_live_webhook_only": 2,
+    "python": 4,
+    "note": "Java tests run against a real embedded PostgreSQL (zonky); 2 live webhook tests need the running mock and are excluded from CI. UI build is a type-check + bundle."
+  },
+  "endpoints": {
+    "application": 16,
+    "plus_actuator_health": 1
+  },
+  "workflows": {
+    "types": 3,
+    "names": ["Standard Leave Approval", "Employee Onboarding Review", "Expense Reimbursement Flow"],
+    "total_steps_seeded": 7
+  },
+  "seed_data": {
+    "leave_policies": 9,
+    "public_holidays": 12,
+    "countries": 3,
+    "synthetic_employees": 199
+  },
+  "csv_import_dirty_file": {
+    "total_rows": 8,
+    "imported": 3,
+    "rejected": 5,
+    "rejection_reasons": [
+      "full_name is required",
+      "email is malformed",
+      "country 'XX' is invalid",
+      "role 'WIZARD' is invalid",
+      "manager_code 'E999' not found"
+    ],
+    "idempotent_on_reimport": true
+  },
+  "webhook_delivery": {
+    "max_attempts": 3,
+    "succeeds_after_injected_failures": 2,
+    "attempts_used_to_succeed": 3,
+    "status_when_all_attempts_fail": "FAILED",
+    "signature": "HMAC-SHA256 over the exact JSON body, verified by the mock"
+  }
+}

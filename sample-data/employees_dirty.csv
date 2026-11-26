@@ -1,0 +1,9 @@
+employee_code,full_name,email,country,role,department,manager_code
+E100,Alice Stone,alice@synthetic.hrflow.test,IN,EMPLOYEE,Engineering,
+E101,Bob Lane,bob@synthetic.hrflow.test,AE,MANAGER,Sales,
+E102,,carol@synthetic.hrflow.test,IN,EMPLOYEE,Finance,
+E103,Dan Ray,not-an-email,DE,EMPLOYEE,Ops,
+E104,Eve Kim,eve@synthetic.hrflow.test,XX,EMPLOYEE,Ops,
+E105,Finn Oak,finn@synthetic.hrflow.test,IN,WIZARD,Ops,
+E106,Gina Fox,gina@synthetic.hrflow.test,IN,EMPLOYEE,Ops,E999
+E107,Hank Poe,hank@synthetic.hrflow.test,IN,EMPLOYEE,Ops,E101
