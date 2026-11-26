@@ -1,0 +1,96 @@
+:root {
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --ink: #1f2733;
+  --muted: #6b7686;
+  --line: #e3e8f0;
+  --brand: #2f55d4;
+  --brand-ink: #ffffff;
+  --ok: #157347;
+  --err: #b02a37;
+  --warn: #9a6700;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+}
+h1, h2, h3 { margin: 0 0 .5rem; }
+.muted { color: var(--muted); }
+.mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; }
+code { background: #eef1f7; padding: 1px 5px; border-radius: 4px; }
+
+/* layout */
+.topbar {
+  display: flex; align-items: center; gap: 1.5rem;
+  background: var(--card); border-bottom: 1px solid var(--line);
+  padding: .75rem 1.25rem; position: sticky; top: 0; z-index: 2;
+}
+.brand { font-weight: 700; color: var(--brand); font-size: 1.15rem; }
+.tabs { display: flex; gap: .25rem; flex: 1; }
+.tab { background: none; border: none; padding: .5rem .85rem; border-radius: 8px; cursor: pointer; color: var(--muted); font-size: .95rem; }
+.tab:hover { background: var(--bg); }
+.tab.active { background: var(--brand); color: var(--brand-ink); }
+.userbox { display: flex; align-items: center; gap: .75rem; font-size: .9rem; }
+.content { max-width: 1040px; margin: 1.5rem auto; padding: 0 1.25rem; }
+.stack { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* cards */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+
+/* forms */
+label { display: block; margin: .5rem 0; font-size: .85rem; color: var(--muted); }
+label.inline { display: flex; align-items: center; gap: .4rem; }
+input, select { font: inherit; padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 8px; width: 100%; background: #fff; color: var(--ink); }
+label input, label select { margin-top: .25rem; }
+.row-form { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
+.row-form label { flex: 1; min-width: 140px; }
+.filters { display: flex; gap: .5rem; }
+.filters input { width: 240px; }
+
+/* buttons */
+button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid transparent; padding: .5rem .9rem; }
+button.primary { background: var(--brand); color: #fff; }
+button.secondary { background: #fff; border-color: var(--line); color: var(--ink); }
+button.link { background: none; border: none; color: var(--brand); padding: .25rem; }
+button.approve { background: var(--ok); color: #fff; }
+button.reject { background: var(--err); color: #fff; }
+.actions { display: flex; gap: .5rem; align-items: center; }
+
+/* tables */
+table.grid { width: 100%; border-collapse: collapse; margin-top: .75rem; }
+.grid th, .grid td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.grid th { font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+.clickable { cursor: pointer; }
+.clickable:hover { background: var(--bg); }
+
+/* badges */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 600; background: #eef1f7; color: #334; }
+.status-PENDING { background: #fff3cd; color: #9a6700; }
+.status-APPROVED { background: #d1e7dd; color: #0f5132; }
+.status-REJECTED { background: #f8d7da; color: #842029; }
+.status-CANCELLED { background: #e2e3e5; color: #41464b; }
+.role-SYSTEM_ADMIN { background: #e7d9ff; color: #5a2ca0; }
+.role-HR_ADMIN { background: #d9e8ff; color: #1b4fa0; }
+.role-MANAGER { background: #d9f2ef; color: #0b6b63; }
+.role-EMPLOYEE { background: #eef1f7; color: #334; }
+.warn { color: var(--warn); font-weight: 600; }
+
+/* messages */
+.error { color: var(--err); background: #f8d7da; padding: .5rem .75rem; border-radius: 8px; margin: .5rem 0; }
+.ok { color: var(--ok); background: #d1e7dd; padding: .5rem .75rem; border-radius: 8px; margin: .5rem 0; }
+
+/* login */
+.login-wrap { min-height: 100vh; display: grid; place-items: center; }
+.login { width: 360px; }
+.login h1 { color: var(--brand); }
+.hint { font-size: .8rem; color: var(--muted); margin-top: 1rem; }
+
+/* audit snapshot */
+.snapshot { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.snapshot pre { background: var(--bg); padding: .6rem; border-radius: 8px; overflow: auto; max-height: 240px; font-size: 12px; }
