@@ -1,0 +1,8 @@
+# Normalise line endings: LF in the repo for everything text, so Linux CI and
+# Windows dev machines agree. Windows batch scripts stay CRLF.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.jar binary
+*.png binary
+*.ico binary
