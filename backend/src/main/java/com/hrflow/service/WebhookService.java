@@ -9,11 +9,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Map;
@@ -34,7 +38,10 @@ public class WebhookService {
 
     private final WebhookDeliveryRepository deliveries;
     private final ObjectMapper mapper;
-    private final RestClient restClient;
+    // Use the JDK HTTP client (not RestClient) so the body is sent as the EXACT
+    // bytes we signed. A String/JSON body goes through a message converter that
+    // can re-encode it (quoting/escaping), which would break HMAC verification.
+    private final HttpClient httpClient;
     private final String targetUrl;
     private final String secret;
     private final int maxAttempts;
@@ -42,7 +49,12 @@ public class WebhookService {
     public WebhookService(WebhookDeliveryRepository deliveries, ObjectMapper mapper, AppProperties props) {
         this.deliveries = deliveries;
         this.mapper = mapper;
-        this.restClient = RestClient.create();
+        // Force HTTP/1.1: the JDK client defaults to HTTP/2, whose cleartext (h2c)
+        // upgrade some HTTP/1.1-only servers (e.g. uvicorn/h11) reject outright.
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
         this.targetUrl = props.webhook().payrollUrl();
         this.secret = props.webhook().secret();
         this.maxAttempts = props.webhook().maxAttempts();
@@ -74,32 +86,37 @@ public class WebhookService {
     }
 
     private void attemptDelivery(WebhookDelivery delivery, String body, String signature) {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(delivery.getTargetUrl()))
+                .header("Content-Type", "application/json")
+                .header("X-HRFlow-Event", delivery.getEventType())
+                .header("X-HRFlow-Signature", signature)
+                // ofString sends exactly these bytes -- the same ones we signed.
+                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
+                .timeout(Duration.ofSeconds(5))
+                .build();
+
         for (int attempt = delivery.getAttemptCount() + 1; attempt <= maxAttempts; attempt++) {
             delivery.setAttemptCount(attempt);
             try {
-                var response = restClient.post()
-                        .uri(delivery.getTargetUrl())
-                        .header("Content-Type", "application/json")
-                        .header("X-HRFlow-Event", delivery.getEventType())
-                        .header("X-HRFlow-Signature", signature)
-                        .body(body)
-                        .retrieve()
-                        .toBodilessEntity();
-
-                delivery.setLastResponseCode(response.getStatusCode().value());
-                if (response.getStatusCode().is2xxSuccessful()) {
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                int code = response.statusCode();
+                delivery.setLastResponseCode(code);
+                if (code >= 200 && code < 300) {
                     delivery.setStatus(DeliveryStatus.SUCCESS);
                     delivery.setLastError(null);
                     delivery.setUpdatedAt(Instant.now());
                     deliveries.save(delivery);
                     return; // delivered
                 }
-                delivery.setLastError("Non-2xx: " + response.getStatusCode());
+                delivery.setLastError(truncate("HTTP " + code + ": " + response.body()));
             } catch (Exception ex) {
-                // Network error, 4xx/5xx, timeout, etc. Record and retry.
+                // Network error, timeout, interruption, etc. Record and retry.
                 delivery.setLastError(truncate(ex.getMessage()));
                 log.warn("Webhook delivery attempt {} failed for delivery {}: {}",
                         attempt, delivery.getId(), ex.getMessage());
+                if (ex instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
         delivery.setStatus(DeliveryStatus.FAILED);
