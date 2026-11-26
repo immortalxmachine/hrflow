@@ -15,4 +15,7 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
     List<Request> findByStatus(RequestStatus status);
 
     Page<Request> findByStatus(RequestStatus status, Pageable pageable);
+
+    /** Pending requests not yet escalated -- candidates for the SLA sweep. */
+    List<Request> findByStatusAndEscalatedFalse(RequestStatus status);
 }

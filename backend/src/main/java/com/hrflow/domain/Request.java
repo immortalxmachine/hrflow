@@ -40,6 +40,13 @@ public class Request {
     @Column(nullable = false, columnDefinition = "jsonb")
     private String payload;
 
+    // True once an SLA-breaching step has been escalated to its escalation_role.
+    @Column(nullable = false)
+    private boolean escalated = false;
+
+    @Column(name = "escalated_at")
+    private Instant escalatedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -65,6 +72,10 @@ public class Request {
     public void setCurrentStepOrder(int currentStepOrder) { this.currentStepOrder = currentStepOrder; }
     public String getPayload() { return payload; }
     public void setPayload(String payload) { this.payload = payload; }
+    public boolean isEscalated() { return escalated; }
+    public void setEscalated(boolean escalated) { this.escalated = escalated; }
+    public Instant getEscalatedAt() { return escalatedAt; }
+    public void setEscalatedAt(Instant escalatedAt) { this.escalatedAt = escalatedAt; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
