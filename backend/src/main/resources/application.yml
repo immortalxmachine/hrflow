@@ -1,0 +1,59 @@
+# HRFlow backend configuration.
+# Secrets (DB password, JWT secret) come from environment variables so nothing
+# sensitive is committed. See .env.example at the repo root for the full list.
+spring:
+  application:
+    name: hrflow
+
+  # --- Database -------------------------------------------------------------
+  # Defaults point at a local Postgres (or the docker-compose "db" service).
+  datasource:
+    url: ${HRFLOW_DB_URL:jdbc:postgresql://localhost:5432/hrflow}
+    username: ${HRFLOW_DB_USER:hrflow}
+    password: ${HRFLOW_DB_PASSWORD:hrflow}
+
+  jpa:
+    # Flyway is the single source of truth for the schema, so Hibernate must
+    # never auto-create or alter tables. It only maps to what Flyway built.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  # --- Flyway migrations ----------------------------------------------------
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+# --- Application-specific settings -----------------------------------------
+hrflow:
+  # JWT signing. The secret MUST be set in production; this default is only for
+  # local dev and is clearly synthetic. It must be >= 32 bytes for HS256.
+  jwt:
+    secret: ${HRFLOW_JWT_SECRET:dev-only-insecure-secret-change-me-32bytes-min!!}
+    # Access-token lifetime in minutes.
+    expiry-minutes: ${HRFLOW_JWT_EXPIRY_MINUTES:120}
+    issuer: hrflow
+
+  # Outbound payroll webhook (the mock FastAPI service).
+  webhook:
+    payroll-url: ${HRFLOW_PAYROLL_URL:http://localhost:8001/webhooks/leave-approved}
+    # Shared secret used to sign the HMAC-SHA256 header.
+    secret: ${HRFLOW_WEBHOOK_SECRET:dev-webhook-secret}
+    # How many times to attempt delivery before marking it FAILED.
+    max-attempts: ${HRFLOW_WEBHOOK_MAX_ATTEMPTS:3}
+
+  # Enables the synthetic-data seeder on startup when true (never in tests).
+  seed-on-startup: ${HRFLOW_SEED:false}
+
+server:
+  port: ${HRFLOW_PORT:8080}
+
+# Expose only the health endpoint for compose/CI health-checks.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

@@ -1,0 +1,31 @@
+# --- Secrets ---
+.env
+*.local
+
+# --- Java / Maven ---
+target/
+.mvn/wrapper/maven-wrapper.jar
+*.class
+
+# --- Node / Vite ---
+node_modules/
+ui/dist/
+ui/.vite/
+*.log
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# --- Editors / OS ---
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# --- zonky embedded postgres extraction dir (tests) ---
+.embedded-pg/
