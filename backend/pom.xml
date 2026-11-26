@@ -23,7 +23,6 @@
 		<jjwt.version>0.12.6</jjwt.version>
 		<commons-csv.version>1.12.0</commons-csv.version>
 		<zonky.embedded.version>2.0.7</zonky.embedded.version>
-		<zonky.spring-test.version>2.5.1</zonky.spring-test.version>
 	</properties>
 
 	<dependencies>
@@ -107,14 +106,11 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!-- zonky: a REAL embedded PostgreSQL (binary auto-downloaded, no Docker) so tests
-		     exercise the same Postgres SQL and Flyway migrations as production. -->
-		<dependency>
-			<groupId>io.zonky.test</groupId>
-			<artifactId>embedded-database-spring-test</artifactId>
-			<version>${zonky.spring-test.version}</version>
-			<scope>test</scope>
-		</dependency>
+		<!-- zonky: a REAL embedded PostgreSQL (binary auto-downloaded, no Docker) so
+		     tests exercise the same Postgres SQL and Flyway migrations as production.
+		     We start it directly (see AbstractPostgresTest) and feed its JDBC URL to
+		     Spring via @DynamicPropertySource, which is independent of Spring Boot's
+		     version and avoids the auto-configuration compatibility matrix. -->
 		<dependency>
 			<groupId>io.zonky.test</groupId>
 			<artifactId>embedded-postgres</artifactId>
